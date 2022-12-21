@@ -1,3 +1,4 @@
+import argparse
 import dataclasses
 import json
 import logging
@@ -17,9 +18,10 @@ class ImageTag(NamedTuple):
     @classmethod
     def from_string(cls, s: str):
         split_s = s.split(":")
-        if len(split_s) != 2:
-            raise ValueError("Invalid tag name")
-        return cls(*split_s)
+        if len(split_s) < 2:
+            raise ValueError(f"Invalid tag name: {s}")
+        *image_name_parts, tag = split_s
+        return cls(repository=":".join(image_name_parts), tag=tag)
 
     @property
     def uri(self):
@@ -103,15 +105,16 @@ def docker_context(client: docker.DockerClient, apply: bool = False):
         Set[str], {tag for image in list_local_images(client) for tag in image.tags}
     )
 
-    yield DockerImageProxy(client=client, apply=apply)
-
-    for image in list_local_images(client):
-        for image_tag in image.tags:
-            if image_tag in init_image_tags:
-                # No need to delete it
-                continue
-            logger.info(f"Deleting image with tag: {image_tag}")
-            client.images.remove(image_tag)
+    try:
+        yield DockerImageProxy(client=client, apply=apply)
+    finally:
+        for image in list_local_images(client):
+            for image_tag in image.tags:
+                if image_tag in init_image_tags:
+                    # No need to delete it
+                    continue
+                logger.info(f"Deleting image with tag: {image_tag}")
+                client.images.remove(image_tag)
 
 
 def main(src_repository: str, dst_repository: str, apply: bool = False):
@@ -129,6 +132,28 @@ def main(src_repository: str, dst_repository: str, apply: bool = False):
         image_context.push_all(dst_repository)
 
 
-if __name__ == "__main__":
+def cli():
     logging.basicConfig(level=logging.INFO)
-    main("lsirepfl/twitter-collect", "icregistry:5000/lsir/twitter-collect", apply=True)
+    parser = argparse.ArgumentParser(
+        "docker-repo-cp", description="CLI to copy docker images between repositories"
+    )
+
+    parser.add_argument(
+        "src_repository", help="The repository to pull the source images"
+    )
+    parser.add_argument(
+        "dst_repository", help="The repository to push the renamed images"
+    )
+    parser.add_argument(
+        "--apply",
+        action="store_true",
+        default=False,
+        help="Performs the copy of images",
+    )
+
+    arguments = parser.parse_args()
+    main(arguments.src_repository, arguments.dst_repository, apply=arguments.apply)
+
+
+if __name__ == "__main__":
+    cli()
