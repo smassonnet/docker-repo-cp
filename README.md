@@ -10,13 +10,13 @@ pip install git+https://github.com/smassonnet/docker-repo-cp.git@main
 
 ## Usage
 
-The following command will copy all tags from `my-organisation/my-image` (Docker HUB)
-into a private registry hosted at `my-registry:5000`.
+The following command will copy all tags from `ORG/IMAGE` (Docker HUB)
+into a private registry hosted at `REGISTRY:5000`.
 
 ```shell
-docker-repo-cp my-organisation/my-image my-registry:5000/my-organisation/my-image --apply
+docker-repo-cp ORG/IMAGE REGISTRY:5000/ORG/IMAGE --apply
 # Or
-python -m docker_repo_cp my-organisation/my-image my-registry:5000/my-organisation/my-image --apply
+python -m docker_repo_cp ORG/IMAGE REGISTRY:5000/ORG/IMAGE --apply
 ```
 
 When not specifying the `--apply` option, the command will not push the new image tags.
