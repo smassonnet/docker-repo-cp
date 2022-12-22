@@ -153,7 +153,3 @@ def cli():
 
     arguments = parser.parse_args()
     main(arguments.src_repository, arguments.dst_repository, apply=arguments.apply)
-
-
-if __name__ == "__main__":
-    cli()
