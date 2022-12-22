@@ -36,9 +36,14 @@ class Image(NamedTuple):
 
 def process_docker_push_logs(logs: str):
     for line in logs.split("\n"):
-        payload = json.loads(line)
-        if "error" in payload:
-            raise ValueError(f"Pushing to registry raised an error: {payload}")
+        if line:
+            try:
+                payload = json.loads(line)
+            except json.JSONDecodeError:
+                pass
+            else:
+                if "error" in payload:
+                    raise ValueError(f"Pushing to registry raised an error: {payload}")
 
 
 @dataclasses.dataclass
